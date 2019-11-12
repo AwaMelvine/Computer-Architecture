@@ -1,5 +1,4 @@
 """CPU functionality."""
-
 import sys
 
 
@@ -9,21 +8,19 @@ class CPU:
     def __init__(self):
         """Construct a new CPU."""
         self.ram = [0] * 256
-        self.reg = [] * 8
+        self.reg = [0] * 8
         self.pc = 0
 
     def ram_read(self, addr):
         return self.ram[addr]
 
-    def ram_write(self, value, addr):
+    def ram_write(self, addr, value):
         self.ram[addr] = value
 
     def load(self):
         """Load a program into memory."""
         address = 0
-
         # For now, we've just hardcoded a program:
-
         program = [
             # From print8.ls8
             0b10000010,  # LDI R0,8
@@ -33,7 +30,6 @@ class CPU:
             0b00000000,
             0b00000001,  # HLT
         ]
-
         for instruction in program:
             self.ram[address] = instruction
             address += 1
@@ -82,16 +78,10 @@ class CPU:
             operand_b = self.ram_read(self.pc + 2)
 
             if IR == LDI:
-                self.ram_write(operand_a, operand_b)
+                self.reg[operand_a] = operand_b
                 self.pc += 3
             elif IR == PRN:
-                data_a = self.ram_read(operand_a)
-                print(data_a)
+                print(self.reg[operand_a])
                 self.pc += 2
             elif IR == HLT:
                 running = False
-
-
-cpu = CPU()
-
-cpu.run()
