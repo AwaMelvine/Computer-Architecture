@@ -143,11 +143,15 @@ class CPU:
             print("usage: cpy.py filename")
             sys.exit(1)
 
+        # Get program from file
         self.program_filename = sys.argv[1]
+        # Load program into memory
         self.load()
 
         while self.running:
+            # Use program counter to get current instruction
             IR = self.ram[self.pc]
+            # Get operands for the instruction
             operand_a = self.ram_read(self.pc + 1)
             operand_b = self.ram_read(self.pc + 2)
 
