@@ -59,7 +59,7 @@ class CPU:
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
         elif op == "MUL":
-            self.reg[reg_a] = reg_a * reg_b
+            self.reg[reg_a] *=  self.reg[reg_b]
             print(self.reg[reg_a])
         else:
             raise Exception("Unsupported ALU operation")
