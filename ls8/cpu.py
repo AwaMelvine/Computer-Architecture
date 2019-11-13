@@ -10,6 +10,7 @@ class CPU:
         self.ram = [0] * 256
         self.reg = [0] * 8
         self.pc = 0
+        self.sp = 7
         self.program_filename = ''
 
     def ram_read(self, addr):
@@ -54,12 +55,11 @@ class CPU:
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
-        print(f"{reg_a}, {reg_b}")
 
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
         elif op == "MUL":
-            self.reg[reg_a] *=  self.reg[reg_b]
+            self.reg[reg_a] *= self.reg[reg_b]
             print(self.reg[reg_a])
         else:
             raise Exception("Unsupported ALU operation")
@@ -91,6 +91,8 @@ class CPU:
         LDI = 0b10000010
         HLT = 0b00000001
         MUL = 0b10100010
+        PUSH = 0b01000101
+        POP = 0b01000110
 
         if len(sys.argv) != 2:
             print("usage: cpy.py filename")
@@ -115,6 +117,27 @@ class CPU:
             elif IR == MUL:
                 self.alu("MUL", operand_a, operand_b)
                 self.pc += 3
+            # DECODE
+            elif IR == PUSH:
+                # EXECUTE
+                reg = self.ram_read(self.pc + 1)
+                val = self.reg[reg]
+
+                # PUSH
+                self.reg[self.sp] -= 1
+                self.ram_write(self.reg[self.sp], val)
+                self.pc += 2
+            # DECODE
+            elif IR == POP:
+                # EXECUTE
+                # SETUP
+                reg = self.ram_read(self.pc + 1)
+                val = self.ram_read(self.reg[self.sp])
+
+                # POP
+                self.reg[reg] = val
+                self.reg[self.sp] += 1
+                self.pc += 2
             elif IR == HLT:
                 running = False
 
