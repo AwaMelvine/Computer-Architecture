@@ -20,6 +20,9 @@ class CPU:
         self.pc = 0
         self.sp = 7
         self.program_filename = ''
+        self.running = True
+
+        # Place methods on branch_table key=>pay dictionary to enable O(1) access inside run() loop
         self.branch_table = {}
         self.branch_table[PRN] = self.handle_prn
         self.branch_table[LDI] = self.handle_ldi
@@ -130,7 +133,7 @@ class CPU:
         self.pc += 2
 
     def handle_halt(self, op_a, op_b):
-        pass
+        self.running = False
 
     def run(self):
         """Run the CPU."""
@@ -143,17 +146,13 @@ class CPU:
         self.program_filename = sys.argv[1]
         self.load()
 
-        running = True
-
-        while running:
+        while self.running:
             IR = self.ram[self.pc]
             operand_a = self.ram_read(self.pc + 1)
             operand_b = self.ram_read(self.pc + 2)
 
+            # Invoke the method responsible for handling this instruction
             self.branch_table[IR](operand_a, operand_b)
-
-            if IR == HLT:
-                running = False
 
 
 cpu = CPU()
