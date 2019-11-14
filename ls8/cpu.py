@@ -8,6 +8,8 @@ HLT = 0b00000001
 MUL = 0b10100010
 PUSH = 0b01000101
 POP = 0b01000110
+CALL = 0b01001001
+RET = 0b01001010
 
 
 class CPU:
@@ -30,6 +32,7 @@ class CPU:
         self.branch_table[MUL] = self.handle_mul
         self.branch_table[PUSH] = self.handle_push
         self.branch_table[POP] = self.handle_pop
+        self.branch_table[CALL] = self.handle_call
 
     def ram_read(self, addr):
         return self.ram[addr]
@@ -134,6 +137,19 @@ class CPU:
 
     def handle_halt(self, op_a, op_b):
         self.running = False
+
+    def handle_call(self, op_a, op_b):
+        # SETUP
+        reg = self.ram_read(self.pc + 1)
+
+        # CALL
+        self.reg[self.pc] -= 1 # Decrement Stack Pointer
+        self.ram_write(self.reg[self.pc], self.pc + 2) # Push pc + 2 on to the stack
+
+        # set pc to subroutine
+        self.pc = self.reg[reg]
+
+        self.pc += 2
 
     def run(self):
         """Run the CPU."""
