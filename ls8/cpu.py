@@ -8,8 +8,9 @@ HLT = 0b00000001
 MUL = 0b10100010
 PUSH = 0b01000101
 POP = 0b01000110
-CALL = 0b01001001
-RET = 0b01001010
+CALL = 0b01010000
+RET = 0b00010001
+ADD = 0b10100000
 
 
 class CPU:
@@ -23,16 +24,19 @@ class CPU:
         self.sp = 7
         self.program_filename = ''
         self.running = True
+        self.op_pc = False
 
         # Place methods on branch_table key=>pay dictionary to enable O(1) access inside run() loop
         self.branch_table = {}
         self.branch_table[PRN] = self.handle_prn
         self.branch_table[LDI] = self.handle_ldi
+        self.branch_table[ADD] = self.handle_add
         self.branch_table[HLT] = self.handle_halt
         self.branch_table[MUL] = self.handle_mul
         self.branch_table[PUSH] = self.handle_push
         self.branch_table[POP] = self.handle_pop
         self.branch_table[CALL] = self.handle_call
+        self.branch_table[RET] = self.handle_ret
 
     def ram_read(self, addr):
         return self.ram[addr]
@@ -76,7 +80,6 @@ class CPU:
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
-
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
         elif op == "MUL":
@@ -104,15 +107,31 @@ class CPU:
 
     def handle_ldi(self, op_a, op_b):
         self.reg[op_a] = op_b
-        self.pc += 3
+        self.op_pc = False
+
+        if not self.op_pc:
+            self.pc += 3
 
     def handle_prn(self, op_a, op_b):
         print(self.reg[op_a])
-        self.pc += 2
+
+        self.op_pc = False
+        if not self.op_pc:
+            self.pc += 2
 
     def handle_mul(self, op_a, op_b):
         self.alu("MUL", op_a, op_b)
-        self.pc += 3
+        self.op_pc = False
+
+        if not self.op_pc:
+            self.pc += 3
+
+    def handle_add(self, op_a, op_b):
+        self.alu("ADD", op_a, op_b)
+        self.op_pc = False
+
+        if not self.op_pc:
+            self.pc += 3
 
     def handle_push(self, op_a, op_b):
         # EXECUTE
@@ -122,7 +141,10 @@ class CPU:
         # PUSH
         self.reg[self.sp] -= 1
         self.ram_write(self.reg[self.sp], val)
-        self.pc += 2
+
+        self.op_pc = False
+        if not self.op_pc:
+            self.pc += 2
 
     def handle_pop(self, op_a, op_b):
         # EXECUTE
@@ -133,7 +155,10 @@ class CPU:
         # POP
         self.reg[reg] = val
         self.reg[self.sp] += 1
-        self.pc += 2
+
+        self.op_pc = False
+        if not self.op_pc:
+            self.pc += 2
 
     def handle_halt(self, op_a, op_b):
         self.running = False
@@ -143,13 +168,32 @@ class CPU:
         reg = self.ram_read(self.pc + 1)
 
         # CALL
-        self.reg[self.pc] -= 1 # Decrement Stack Pointer
-        self.ram_write(self.reg[self.pc], self.pc + 2) # Push pc + 2 on to the stack
+        self.reg[self.pc] -= 1  # Decrement Stack Pointer
+        # Push pc + 2 on to the stack
+        self.ram_write(self.reg[self.pc], self.pc + 2)
 
         # set pc to subroutine
         self.pc = self.reg[reg]
+        self.op_pc = True
 
-        self.pc += 2
+        if not self.op_pc:
+            self.pc += 2
+
+    def handle_ret(self, op_a, op_b):
+        # SETUP
+        reg = self.ram_read(self.pc + 1)
+
+        # CALL
+        self.reg[self.pc] -= 1  # Decrement Stack Pointer
+        # Push pc + 2 on to the stack
+        self.ram_write(self.reg[self.pc], self.pc + 2)
+
+        # set pc to subroutine
+        self.pc = self.reg[reg]
+        self.op_pc = True
+
+        if not self.op_pc:
+            self.pc += 2
 
     def run(self):
         """Run the CPU."""
@@ -172,7 +216,10 @@ class CPU:
             operand_b = self.ram_read(self.pc + 2)
 
             # Invoke the method responsible for handling this instruction
-            self.branch_table[IR](operand_a, operand_b)
+            if IR in self.branch_table:
+                self.branch_table[IR](operand_a, operand_b)
+            else:
+                print("Error: Instruction not found")
 
 
 cpu = CPU()
