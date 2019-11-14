@@ -168,9 +168,9 @@ class CPU:
         reg = self.ram_read(self.pc + 1)
 
         # CALL
-        self.reg[self.pc] -= 1  # Decrement Stack Pointer
+        self.reg[self.sp] -= 1  # Decrement Stack Pointer
         # Push pc + 2 on to the stack
-        self.ram_write(self.reg[self.pc], self.pc + 2)
+        self.ram_write(self.reg[self.sp], self.pc + 2)
 
         # set pc to subroutine
         self.pc = self.reg[reg]
@@ -180,20 +180,12 @@ class CPU:
             self.pc += 2
 
     def handle_ret(self, op_a, op_b):
-        # SETUP
-        reg = self.ram_read(self.pc + 1)
-
-        # CALL
-        self.reg[self.pc] -= 1  # Decrement Stack Pointer
-        # Push pc + 2 on to the stack
-        self.ram_write(self.reg[self.pc], self.pc + 2)
-
-        # set pc to subroutine
-        self.pc = self.reg[reg]
+        self.pc = self.ram_read(self.reg[self.sp])
+        self.reg[self.sp] += 1
         self.op_pc = True
 
         if not self.op_pc:
-            self.pc += 2
+            self.pc += 1
 
     def run(self):
         """Run the CPU."""
@@ -215,11 +207,15 @@ class CPU:
             operand_a = self.ram_read(self.pc + 1)
             operand_b = self.ram_read(self.pc + 2)
 
+            # print(f"{IR}--")
+
             # Invoke the method responsible for handling this instruction
             if IR in self.branch_table:
                 self.branch_table[IR](operand_a, operand_b)
             else:
+                print(IR)
                 print("Error: Instruction not found")
+                sys.exit(1)
 
 
 cpu = CPU()
